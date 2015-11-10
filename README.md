@@ -1,10 +1,12 @@
 # httpway
 
-Simple middleware for https://github.com/julienschmidt/httprouter/
+Simple middleware for [httprouter](https://github.com/julienschmidt/httprouter/)
 
 - simple middleware without overhead, httprouter will have the same performance
 - context available from first middleware until handler
 - http server with gracefully shutdown
+
+[![GoDoc](https://godoc.org/github.com/corneldamian/httpway?status.svg)](https://godoc.org/github.com/corneldamian/httpway)
 
 ```
 package main
