@@ -70,30 +70,30 @@ func (r *Router) Handle(method, path string, handle httprouter.Handle) {
 }
 
 //Add a middleware before (and after) the handler run
-// router := httpway.New()
-// public := router.Middleware(AccessLogger)
-// private := public.Middleware(AuthCheck)
+//   router := httpway.New()
+//   public := router.Middleware(AccessLogger)
+//   private := public.Middleware(AuthCheck)
+//  
+//   public.GET("/public", somePublicHandler)
+//   private.GET("/private", somePrivateHandler)
 //
-// public.GET("/public", somePublicHandler)
-// private.GET("/private", somePrivateHandler)
-//
-//func AccessLogger(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-//  startTime:=time.Now()
+//  func AccessLogger(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+//  	startTime:=time.Now()
 //
 //	httpway.GetContext(r).Next(w, r, ps)
 //
-//  fmt.Printf("Request: %s duration: %s\n", r.URL.EscapedPath(), time.Since(startTime))
-//}
-//func AuthCheck(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+//  	fmt.Printf("Request: %s duration: %s\n", r.URL.EscapedPath(), time.Since(startTime))
+//  }
+//  
+//  func AuthCheck(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 //	ctx := httpway.GetContext(r)
 //
-//  if !ctx.Session().IsAuth() {
+//  	if !ctx.Session().IsAuth() {
 //		http.Error(w, "Auth required", 401)
 //		return
-//  }
-//
+//  	}
 //	ctx.Next(w, r, ps)
-//}
+//  }
 //
 func (r *Router) Middleware(handle httprouter.Handle) *Router {
 	rt := &Router{
