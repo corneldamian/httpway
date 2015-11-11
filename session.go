@@ -4,6 +4,7 @@ import "net/http"
 
 //session interface
 type Session interface {
+	Id() string
 	IsAuth() bool
 	Username() string
 

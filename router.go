@@ -100,6 +100,8 @@ func (r *Router) Middleware(handle httprouter.Handle) *Router {
 		prev:   r,
 		handle: handle,
 		Router: r.Router,
+		Logger: r.Logger,
+		SessionManager: r.SessionManager,
 	}
 
 	return rt
