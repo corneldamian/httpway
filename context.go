@@ -4,7 +4,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
-	"fmt"
 )
 
 //get the context associated with the request
