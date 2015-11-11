@@ -7,6 +7,7 @@ Simple middleware for [httprouter](https://github.com/julienschmidt/httprouter/)
 - http server with gracefully shutdown
 
 [![GoDoc](https://godoc.org/github.com/corneldamian/httpway?status.svg)](https://godoc.org/github.com/corneldamian/httpway)
+[![Build Status](https://travis-ci.org/corneldamian/httpway.svg?branch=master)](https://travis-ci.org/corneldamian/httpway)
 
 ```
 package main
