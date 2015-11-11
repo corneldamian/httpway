@@ -107,7 +107,8 @@ func (c *Context) HasSession() bool {
 	return true
 }
 
-func createContext(router *Router, w http.ResponseWriter, r *http.Request, handlers *[]httprouter.Handle, handlersLen *int) http.ResponseWriter {
+//create context with middlewares chain for the request
+func CreateContext(router *Router, w http.ResponseWriter, r *http.Request, handlers *[]httprouter.Handle, handlersLen *int) http.ResponseWriter {
 	crc := &contextReadClose{
 		ReadCloser: r.Body,
 		ctxObj: &Context{

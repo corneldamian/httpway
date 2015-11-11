@@ -64,7 +64,7 @@ func (r *Router) DELETE(path string, handle httprouter.Handle) {
 // frequently used, non-standardized or custom methods (e.g. for internal
 // communication with a proxy).
 func (r *Router) Handle(method, path string, handle httprouter.Handle) {
-	newHandle := r.generateStackHandler(handle)
+	newHandle := r.GenerateChainHandler(handle)
 
 	r.Router.Handle(method, path, newHandle)
 }
@@ -105,7 +105,8 @@ func (r *Router) Middleware(handle httprouter.Handle) *Router {
 	return rt
 }
 
-func (router *Router) generateStackHandler(handle httprouter.Handle) httprouter.Handle {
+//get handler with all the middlewares chained
+func (router *Router) GenerateChainHandler(handle httprouter.Handle) httprouter.Handle {
 	if router.prev == nil {
 		return handle
 	}
@@ -129,7 +130,7 @@ func (router *Router) generateStackHandler(handle httprouter.Handle) httprouter.
 	middlewareListLen := len(middlewareList)
 
 	httprouterHandler := func(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
-		w = createContext(router, w, r, &middlewareList, &middlewareListLen)
+		w = CreateContext(router, w, r, &middlewareList, &middlewareListLen)
 
 		lastMiddleware(w, r, pr)
 	}
