@@ -4,6 +4,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
+	"fmt"
 )
 
 //get the context associated with the request
@@ -22,6 +23,8 @@ type Context struct {
 	data    map[string]interface{}
 	logger  Logger
 	session Session
+	statusCode int
+	transferedBytes uint64
 
 	handlers          *[]httprouter.Handle
 	runNextHandlerIdx int
@@ -61,6 +64,14 @@ func (c *Context) Has(key string) bool {
 	return has
 }
 
+func (c *Context) StatusCode() int {
+	return c.statusCode
+}
+
+func (c *Context) TransferedBytes() uint64 {
+	return c.transferedBytes
+}
+
 //returns the logger associated with the request
 func (c *Context) Log() Logger {
 	if c.logger == nil {
@@ -68,6 +79,15 @@ func (c *Context) Log() Logger {
 	}
 
 	return c.logger
+}
+
+//check if log is enabled
+func (c *Context) HasLog() bool {
+	if c.logger == nil {
+		return false
+	}
+
+	return true
 }
 
 //returns the session associated with the request
@@ -79,7 +99,16 @@ func (c *Context) Session() Session {
 	return c.session
 }
 
-func createContext(router *Router, w http.ResponseWriter, r *http.Request, handlers *[]httprouter.Handle, handlersLen *int) {
+//check if session is enabled
+func (c *Context) HasSession() bool {
+	if c.session == nil {
+		return false
+	}
+
+	return true
+}
+
+func createContext(router *Router, w http.ResponseWriter, r *http.Request, handlers *[]httprouter.Handle, handlersLen *int) http.ResponseWriter {
 	crc := &contextReadClose{
 		ReadCloser: r.Body,
 		ctxObj: &Context{
@@ -98,6 +127,8 @@ func createContext(router *Router, w http.ResponseWriter, r *http.Request, handl
 	}
 
 	r.Body = crc
+
+	return &internalResponseWriter{w, crc.ctxObj}
 }
 
 type contextReadCloser interface {
@@ -112,4 +143,30 @@ type contextReadClose struct {
 
 func (crc *contextReadClose) ctx() *Context {
 	return crc.ctxObj
+}
+
+type internalResponseWriter struct {
+	rw http.ResponseWriter
+	ctx *Context
+}
+
+func (irw *internalResponseWriter) Header() http.Header {
+	return irw.rw.Header()
+}
+
+func (irw *internalResponseWriter)  Write(b []byte) (n int, err error) {
+	if irw.ctx.statusCode == 0 {
+		irw.ctx.statusCode = 200
+	}
+	n, err = irw.rw.Write(b)
+
+	irw.ctx.transferedBytes += uint64(n)
+	return
+}
+
+func (irw *internalResponseWriter) WriteHeader(status int) {
+	if irw.ctx.statusCode == 0 {
+		irw.ctx.statusCode = status
+	}
+	irw.rw.WriteHeader(status)
 }

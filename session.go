@@ -5,6 +5,7 @@ import "net/http"
 //session interface
 type Session interface {
 	IsAuth() bool
+	Username() string
 
 	Set(key string, val interface{})
 

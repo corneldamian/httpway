@@ -129,7 +129,7 @@ func (router *Router) generateStackHandler(handle httprouter.Handle) httprouter.
 	middlewareListLen := len(middlewareList)
 
 	httprouterHandler := func(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
-		createContext(router, w, r, &middlewareList, &middlewareListLen)
+		w = createContext(router, w, r, &middlewareList, &middlewareListLen)
 
 		lastMiddleware(w, r, pr)
 	}
