@@ -6,6 +6,8 @@ Simple middleware for [httprouter](https://github.com/julienschmidt/httprouter/)
 - context available from first middleware until handler
 - http server with gracefully shutdown
 
+You can get some middlewares from here [httpwaymid](https://github.com/corneldamian/httpwaymid)
+
 [![GoDoc](https://godoc.org/github.com/corneldamian/httpway?status.svg)](https://godoc.org/github.com/corneldamian/httpway)
 [![Build Status](https://travis-ci.org/corneldamian/httpway.svg?branch=master)](https://travis-ci.org/corneldamian/httpway)
 
