@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"github.com/julienschmidt/httprouter"
+	"log"
 )
 
 //create a new server instance
@@ -68,6 +70,13 @@ func (s *Server) Start() error {
 	s.listener = listener
 	s.serverGroup = &sync.WaitGroup{}
 	s.clientsGroup = make(chan bool, 50000)
+
+
+	if s.ErrorLog == nil {
+		if r, ok:=s.Handler.(ishttpwayrouter); ok {
+			s.ErrorLog = log.New(&internalServerLoggerWriter{r.(*Router).Logger}, "", 0)
+		}
+	}
 
 	s.Handler = &serverHandler{s.Handler, s.clientsGroup, s.serverInstanceId}
 
@@ -157,4 +166,8 @@ func (sh *serverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("X-Server-Instance-Id", sh.serverInstanceId)
 
 	sh.handler.ServeHTTP(w, r)
+}
+
+type ishttpwayrouter interface {
+	Middleware(handle httprouter.Handle) *Router
 }

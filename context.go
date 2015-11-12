@@ -2,9 +2,13 @@ package httpway
 
 import (
 	"github.com/julienschmidt/httprouter"
+
 	"io"
 	"net/http"
+	"sync/atomic"
 )
+
+var requestId uint64 = 0
 
 //get the context associated with the request
 func GetContext(r *http.Request) *Context {
@@ -123,7 +127,10 @@ func CreateContext(router *Router, w http.ResponseWriter, r *http.Request, handl
 	}
 
 	if router.Logger != nil {
-		crc.ctxObj.logger = router.Logger
+		l:=&internalLogger{router.Logger, atomic.AddUint64(&requestId, 1)}
+		l.SetFileDepth(0)
+
+		crc.ctxObj.logger = l
 	}
 
 	r.Body = crc
