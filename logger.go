@@ -33,14 +33,6 @@ func (il *internalLogger) Debug(v ...interface{}) {
 	il.log(il.l.Debug, v...)
 }
 
-func (il *internalLogger) SetFileDepth(depth int) {
-	if l, ok:=il.l.(setCallDepth); ok {
-		if depth == 0 {
-			depth = default_depth
-		}
-		l.SetFileDepth(depth)
-	}
-}
 
 func (il *internalLogger) log(f func(v...interface{}), v ...interface{}) {
 	if len(v) > 1 {
@@ -50,11 +42,6 @@ func (il *internalLogger) log(f func(v...interface{}), v ...interface{}) {
 	}
 
 	f(v...)
-}
-
-
-type setCallDepth interface {
-	SetFileDepth(depth int)
 }
 
 type internalServerLoggerWriter struct {

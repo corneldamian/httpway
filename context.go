@@ -127,10 +127,7 @@ func CreateContext(router *Router, w http.ResponseWriter, r *http.Request, handl
 	}
 
 	if router.Logger != nil {
-		l:=&internalLogger{router.Logger, atomic.AddUint64(&requestId, 1)}
-		l.SetFileDepth(0)
-
-		crc.ctxObj.logger = l
+		crc.ctxObj.logger = &internalLogger{router.Logger, atomic.AddUint64(&requestId, 1)}
 	}
 
 	r.Body = crc
