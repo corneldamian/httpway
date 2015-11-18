@@ -1,11 +1,11 @@
 package httpway
 
 import (
-	"github.com/julienschmidt/httprouter"
-
 	"io"
 	"net/http"
 	"sync/atomic"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 var requestId uint64 = 0
@@ -23,25 +23,26 @@ func GetContext(r *http.Request) *Context {
 
 //this is the context that is created for each request
 type Context struct {
-	data    map[string]interface{}
-	logger  Logger
-	session Session
-	statusCode int
+	data            map[string]interface{}
+	logger          Logger
+	session         Session
+	statusCode      int
 	transferedBytes uint64
+	params          *httprouter.Params
 
-	handlers          *[]httprouter.Handle
+	handlers          *[]Handler
 	runNextHandlerIdx int
 }
 
 //execute the next middleware
-func (c *Context) Next(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
+func (c *Context) Next(w http.ResponseWriter, r *http.Request) {
 	c.runNextHandlerIdx--
 
 	if c.runNextHandlerIdx < 0 {
 		panic("No next middleware, don't call it in final handler")
 	}
 
-	(*c.handlers)[c.runNextHandlerIdx](w, r, pr)
+	(*c.handlers)[c.runNextHandlerIdx](w, r)
 }
 
 //set a key on context
@@ -111,14 +112,20 @@ func (c *Context) HasSession() bool {
 	return true
 }
 
+//get the param from url
+func (c *Context) ParamByName(name string) string {
+	return c.params.ByName(name)
+}
+
 //create context with middlewares chain for the request
-func CreateContext(router *Router, w http.ResponseWriter, r *http.Request, handlers *[]httprouter.Handle, handlersLen *int) http.ResponseWriter {
+func CreateContext(router *Router, w http.ResponseWriter, r *http.Request, handlers *[]Handler, handlersLen *int, pr *httprouter.Params) http.ResponseWriter {
 	crc := &contextReadClose{
 		ReadCloser: r.Body,
 		ctxObj: &Context{
 			data:              make(map[string]interface{}),
 			handlers:          handlers,
 			runNextHandlerIdx: *handlersLen,
+			params:            pr,
 		},
 	}
 
@@ -150,7 +157,7 @@ func (crc *contextReadClose) ctx() *Context {
 }
 
 type internalResponseWriter struct {
-	rw http.ResponseWriter
+	rw  http.ResponseWriter
 	ctx *Context
 }
 
@@ -158,7 +165,7 @@ func (irw *internalResponseWriter) Header() http.Header {
 	return irw.rw.Header()
 }
 
-func (irw *internalResponseWriter)  Write(b []byte) (n int, err error) {
+func (irw *internalResponseWriter) Write(b []byte) (n int, err error) {
 	if irw.ctx.statusCode == 0 {
 		irw.ctx.statusCode = 200
 	}

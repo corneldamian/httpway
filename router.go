@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+type Handler func(http.ResponseWriter, *http.Request)
+
 func New() *Router {
 	return &Router{
 		Router: httprouter.New(),
@@ -17,41 +19,41 @@ type Router struct {
 	Logger         Logger
 
 	prev   *Router
-	handle httprouter.Handle
+	handle Handler
 }
 
-// GET is a shortcut for router.Handle("GET", path, handle)
-func (r *Router) GET(path string, handle httprouter.Handle) {
+// register a GET handler with path
+func (r *Router) GET(path string, handle Handler) {
 	r.Handle("GET", path, handle)
 }
 
-// HEAD is a shortcut for router.Handle("HEAD", path, handle)
-func (r *Router) HEAD(path string, handle httprouter.Handle) {
+// register a HEAD handler with path
+func (r *Router) HEAD(path string, handle Handler) {
 	r.Handle("HEAD", path, handle)
 }
 
-// OPTIONS is a shortcut for router.Handle("OPTIONS", path, handle)
-func (r *Router) OPTIONS(path string, handle httprouter.Handle) {
+// register a OPTIONS handler with path
+func (r *Router) OPTIONS(path string, handle Handler) {
 	r.Handle("OPTIONS", path, handle)
 }
 
-// POST is a shortcut for router.Handle("POST", path, handle)
-func (r *Router) POST(path string, handle httprouter.Handle) {
+// register a POST handler with path
+func (r *Router) POST(path string, handle Handler) {
 	r.Handle("POST", path, handle)
 }
 
-// PUT is a shortcut for router.Handle("PUT", path, handle)
-func (r *Router) PUT(path string, handle httprouter.Handle) {
+// register a PUT handler with path
+func (r *Router) PUT(path string, handle Handler) {
 	r.Handle("PUT", path, handle)
 }
 
-// PATCH is a shortcut for router.Handle("PATCH", path, handle)
-func (r *Router) PATCH(path string, handle httprouter.Handle) {
+// register a PATCH handler with path
+func (r *Router) PATCH(path string, handle Handler) {
 	r.Handle("PATCH", path, handle)
 }
 
-// DELETE is a shortcut for router.Handle("DELETE", path, handle)
-func (r *Router) DELETE(path string, handle httprouter.Handle) {
+// register a DELETE handler with path
+func (r *Router) DELETE(path string, handle Handler) {
 	r.Handle("DELETE", path, handle)
 }
 
@@ -63,7 +65,7 @@ func (r *Router) DELETE(path string, handle httprouter.Handle) {
 // This function is intended for bulk loading and to allow the usage of less
 // frequently used, non-standardized or custom methods (e.g. for internal
 // communication with a proxy).
-func (r *Router) Handle(method, path string, handle httprouter.Handle) {
+func (r *Router) Handle(method, path string, handle Handler) {
 	newHandle := r.GenerateChainHandler(handle)
 
 	r.Router.Handle(method, path, newHandle)
@@ -73,49 +75,52 @@ func (r *Router) Handle(method, path string, handle httprouter.Handle) {
 //   router := httpway.New()
 //   public := router.Middleware(AccessLogger)
 //   private := public.Middleware(AuthCheck)
-//  
+//
 //   public.GET("/public", somePublicHandler)
 //   private.GET("/private", somePrivateHandler)
 //
-//  func AccessLogger(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+//  func AccessLogger(w http.ResponseWriter, r *http.Request) {
 //  	startTime:=time.Now()
 //
-//	httpway.GetContext(r).Next(w, r, ps)
+//	httpway.GetContext(r).Next(w, r)
 //
 //  	fmt.Printf("Request: %s duration: %s\n", r.URL.EscapedPath(), time.Since(startTime))
 //  }
-//  
-//  func AuthCheck(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+//
+//  func AuthCheck(w http.ResponseWriter, r *http.Request) {
 //	ctx := httpway.GetContext(r)
 //
 //  	if !ctx.Session().IsAuth() {
 //		http.Error(w, "Auth required", 401)
 //		return
 //  	}
-//	ctx.Next(w, r, ps)
+//	ctx.Next(w, r)
 //  }
 //
-func (r *Router) Middleware(handle httprouter.Handle) *Router {
+func (r *Router) Middleware(handle Handler) *Router {
 	rt := &Router{
-		prev:   r,
-		handle: handle,
-		Router: r.Router,
-		Logger: r.Logger,
+		prev:           r,
+		handle:         handle,
+		Router:         r.Router,
+		Logger:         r.Logger,
 		SessionManager: r.SessionManager,
 	}
 
 	return rt
 }
 
-//get handler with all the middlewares chained
-func (router *Router) GenerateChainHandler(handle httprouter.Handle) httprouter.Handle {
+//get httprouter handler with all the middlewares chained
+func (router *Router) GenerateChainHandler(handle Handler) httprouter.Handle {
 	if router.prev == nil {
-		return handle
+		return func(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
+			w = CreateContext(router, w, r, nil, nil, &pr)
+			handle(w, r)
+		}
 	}
 
 	var (
-		lastMiddleware httprouter.Handle
-		middlewareList = make([]httprouter.Handle, 0)
+		lastMiddleware Handler
+		middlewareList = make([]Handler, 0)
 	)
 
 	mid := router
@@ -132,9 +137,9 @@ func (router *Router) GenerateChainHandler(handle httprouter.Handle) httprouter.
 	middlewareListLen := len(middlewareList)
 
 	httprouterHandler := func(w http.ResponseWriter, r *http.Request, pr httprouter.Params) {
-		w = CreateContext(router, w, r, &middlewareList, &middlewareListLen)
+		w = CreateContext(router, w, r, &middlewareList, &middlewareListLen, &pr)
 
-		lastMiddleware(w, r, pr)
+		lastMiddleware(w, r)
 	}
 
 	return httprouterHandler

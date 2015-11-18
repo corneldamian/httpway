@@ -4,14 +4,13 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
-	"github.com/julienschmidt/httprouter"
-	"log"
 )
 
 //create a new server instance
@@ -71,9 +70,8 @@ func (s *Server) Start() error {
 	s.serverGroup = &sync.WaitGroup{}
 	s.clientsGroup = make(chan bool, 50000)
 
-
 	if s.ErrorLog == nil {
-		if r, ok:=s.Handler.(ishttpwayrouter); ok {
+		if r, ok := s.Handler.(ishttpwayrouter); ok {
 			s.ErrorLog = log.New(&internalServerLoggerWriter{r.(*Router).Logger}, "", 0)
 		}
 	}
@@ -169,5 +167,5 @@ func (sh *serverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type ishttpwayrouter interface {
-	Middleware(handle httprouter.Handle) *Router
+	Middleware(handle Handler) *Router
 }

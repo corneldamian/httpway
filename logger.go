@@ -1,4 +1,5 @@
 package httpway
+
 import "fmt"
 
 //logger interface
@@ -9,11 +10,10 @@ type Logger interface {
 	Debug(v ...interface{})
 }
 
-
 const default_depth = 5
 
-type internalLogger struct{
-	l Logger
+type internalLogger struct {
+	l  Logger
 	id uint64
 }
 
@@ -33,8 +33,7 @@ func (il *internalLogger) Debug(v ...interface{}) {
 	il.log(il.l.Debug, v...)
 }
 
-
-func (il *internalLogger) log(f func(v...interface{}), v ...interface{}) {
+func (il *internalLogger) log(f func(v ...interface{}), v ...interface{}) {
 	if len(v) > 1 {
 		v[0] = fmt.Sprintf("[%x] %s", il.id, v[0].(string))
 	} else {
