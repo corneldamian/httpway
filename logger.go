@@ -18,18 +18,32 @@ type internalLogger struct {
 }
 
 func (il *internalLogger) Info(v ...interface{}) {
+	if il.l == nil {
+		return
+	}
 	il.log(il.l.Info, v...)
 }
 
 func (il *internalLogger) Warning(v ...interface{}) {
+	if il.l == nil {
+		return
+	}
+
 	il.log(il.l.Warning, v...)
 }
 
 func (il *internalLogger) Error(v ...interface{}) {
+	if il.l == nil {
+		return
+	}
+
 	il.log(il.l.Error, v...)
 }
 
 func (il *internalLogger) Debug(v ...interface{}) {
+	if il.l == nil {
+		return
+	}
 	il.log(il.l.Debug, v...)
 }
 

@@ -17,6 +17,6 @@ type Session interface {
 
 //sessions manager interface
 type SessionManager interface {
-	Get(w http.ResponseWriter, r *http.Request) Session
-	Set(w http.ResponseWriter, r *http.Request, session Session)
+	Get(w http.ResponseWriter, r *http.Request, log Logger) Session
+	Set(w http.ResponseWriter, r *http.Request, session Session, log Logger)
 }

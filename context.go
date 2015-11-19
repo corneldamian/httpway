@@ -129,12 +129,10 @@ func CreateContext(router *Router, w http.ResponseWriter, r *http.Request, handl
 		},
 	}
 
-	if router.SessionManager != nil {
-		crc.ctxObj.session = router.SessionManager.Get(w, r)
-	}
+	crc.ctxObj.logger = &internalLogger{router.Logger, atomic.AddUint64(&requestId, 1)}
 
-	if router.Logger != nil {
-		crc.ctxObj.logger = &internalLogger{router.Logger, atomic.AddUint64(&requestId, 1)}
+	if router.SessionManager != nil {
+		crc.ctxObj.session = router.SessionManager.Get(w, r, crc.ctxObj.logger)
 	}
 
 	r.Body = crc
