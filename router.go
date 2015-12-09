@@ -1,8 +1,10 @@
 package httpway
 
 import (
+	"encoding/json"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
+	"reflect"
 )
 
 type Handler func(http.ResponseWriter, *http.Request)
@@ -42,9 +44,19 @@ func (r *Router) POST(path string, handle Handler) {
 	r.Handle("POST", path, handle)
 }
 
+// register a POST handler with path and payload to be decoded from body
+func (r *Router) POSTwPayload(path string, handle Handler, payload interface{}) {
+	r.HandleWPayload("POST", path, handle, payload)
+}
+
 // register a PUT handler with path
 func (r *Router) PUT(path string, handle Handler) {
 	r.Handle("PUT", path, handle)
+}
+
+// register a PUT handler with path and payload to be decoded from body
+func (r *Router) PUTwPayload(path string, handle Handler, payload interface{}) {
+	r.HandleWPayload("PUT", path, handle, payload)
 }
 
 // register a PATCH handler with path
@@ -69,6 +81,34 @@ func (r *Router) Handle(method, path string, handle Handler) {
 	newHandle := r.GenerateChainHandler(handle)
 
 	r.Router.Handle(method, path, newHandle)
+}
+
+// HandleWPayload it's the same with Handle only will try to get from the
+// body of the request the data and json unmarshal to the payload type
+func (r *Router) HandleWPayload(method, path string, handle Handler, payload interface{}) {
+
+	payloadType := reflect.TypeOf(payload)
+
+	newhandler := func(hw http.ResponseWriter, hr *http.Request) {
+		ctx := GetContext(hr)
+
+		decoder := json.NewDecoder(hr.Body)
+		defer hr.Body.Close()
+
+		var decodedPayload = reflect.New(payloadType).Interface()
+
+		err := decoder.Decode(decodedPayload)
+		if err != nil {
+			hw.WriteHeader(400)
+			return
+		}
+
+		ctx.payload = decodedPayload
+
+		handle(hw, hr)
+	}
+
+	r.Handle(method, path, newhandler)
 }
 
 //Add a middleware before (and after) the handler run

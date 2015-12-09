@@ -29,6 +29,7 @@ type Context struct {
 	statusCode      int
 	transferedBytes uint64
 	params          *httprouter.Params
+	payload         interface{}
 
 	handlers          *[]Handler
 	runNextHandlerIdx int
@@ -117,6 +118,11 @@ func (c *Context) ParamByName(name string) string {
 	return c.params.ByName(name)
 }
 
+//get the parsed body payload
+func (c *Context) Payload() interface{} {
+	return c.payload
+}
+
 //create context with middlewares chain for the request
 func CreateContext(router *Router, w http.ResponseWriter, r *http.Request, handlers *[]Handler, handlersLen *int, pr *httprouter.Params) http.ResponseWriter {
 	crc := &contextReadClose{
@@ -129,15 +135,20 @@ func CreateContext(router *Router, w http.ResponseWriter, r *http.Request, handl
 		},
 	}
 
-	crc.ctxObj.logger = &internalLogger{router.Logger, atomic.AddUint64(&requestId, 1)}
+	crc.ctxObj.logger = &internalLogger{router.Logger, atomic.AddUint64(&requestId, 1), ""}
+
+	r.Body = crc
+	w = &internalResponseWriter{w, crc.ctxObj}
 
 	if router.SessionManager != nil {
 		crc.ctxObj.session = router.SessionManager.Get(w, r, crc.ctxObj.logger)
+
+		if crc.ctxObj.session.Username() != "" {
+			crc.ctxObj.logger.(*internalLogger).prefix = crc.ctxObj.session.Username()
+		}
 	}
 
-	r.Body = crc
-
-	return &internalResponseWriter{w, crc.ctxObj}
+	return w
 }
 
 type contextReadCloser interface {

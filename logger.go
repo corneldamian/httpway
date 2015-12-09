@@ -13,8 +13,9 @@ type Logger interface {
 const default_depth = 5
 
 type internalLogger struct {
-	l  Logger
-	id uint64
+	l      Logger
+	id     uint64
+	prefix string
 }
 
 func (il *internalLogger) Info(v ...interface{}) {
@@ -52,6 +53,10 @@ func (il *internalLogger) log(f func(v ...interface{}), v ...interface{}) {
 		v[0] = fmt.Sprintf("[%x] %s", il.id, v[0].(string))
 	} else {
 		v[0] = fmt.Sprintf("[%x] %v", il.id, v[0])
+	}
+
+	if il.prefix != "" {
+		v[0] = fmt.Sprintf("[%s] %s", il.prefix, v[0].(string))
 	}
 
 	f(v...)
