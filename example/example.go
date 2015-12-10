@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/corneldamian/httpway"
-	"github.com/julienschmidt/httprouter"
 )
 
 var server *httpway.Server
@@ -36,26 +35,26 @@ func main() {
 	}
 }
 
-func testHandler(str string) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func testHandler(str string) httpway.Handler {
+	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "%s", str)
 	}
 }
 
-func stopServer(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func stopServer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Stopping")
 	server.Stop()
 }
 
-func AccessLogger(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func AccessLogger(w http.ResponseWriter, r *http.Request) {
 	startTime := time.Now()
 
-	httpway.GetContext(r).Next(w, r, ps)
+	httpway.GetContext(r).Next(w, r)
 
 	fmt.Printf("Request: %s duration: %s\n", r.URL.EscapedPath(), time.Since(startTime))
 }
 
-func AuthCheck(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func AuthCheck(w http.ResponseWriter, r *http.Request) {
 	ctx := httpway.GetContext(r)
 
 	if r.URL.EscapedPath() == "/public" {
@@ -63,5 +62,5 @@ func AuthCheck(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	ctx.Next(w, r, ps)
+	ctx.Next(w, r)
 }
