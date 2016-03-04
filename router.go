@@ -100,6 +100,9 @@ func (r *Router) HandleWPayload(method, path string, handle Handler, payload int
 		err := decoder.Decode(decodedPayload)
 		if err != nil {
 			hw.WriteHeader(400)
+			if r.Logger != nil {
+				r.Logger.Error("Unable to decode your payload for %s (%s)", payloadType.Name(), err)
+			}
 			return
 		}
 
