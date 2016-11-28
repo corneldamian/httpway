@@ -5,7 +5,10 @@ import (
 	"net/http"
 	"sync/atomic"
 
+	"bufio"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
+	"net"
 )
 
 var requestId uint64 = 0
@@ -166,19 +169,15 @@ func (crc *contextReadClose) ctx() *Context {
 }
 
 type internalResponseWriter struct {
-	rw  http.ResponseWriter
+	http.ResponseWriter
 	ctx *Context
-}
-
-func (irw *internalResponseWriter) Header() http.Header {
-	return irw.rw.Header()
 }
 
 func (irw *internalResponseWriter) Write(b []byte) (n int, err error) {
 	if irw.ctx.statusCode == 0 {
 		irw.ctx.statusCode = 200
 	}
-	n, err = irw.rw.Write(b)
+	n, err = irw.ResponseWriter.Write(b)
 
 	irw.ctx.transferedBytes += uint64(n)
 	return
@@ -188,5 +187,14 @@ func (irw *internalResponseWriter) WriteHeader(status int) {
 	if irw.ctx.statusCode == 0 {
 		irw.ctx.statusCode = status
 	}
-	irw.rw.WriteHeader(status)
+	irw.ResponseWriter.WriteHeader(status)
+}
+
+func (irw *internalResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hij, ok := irw.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, fmt.Errorf("Unable to Hijack the connection %T doesn't implement Hijack", irw.ResponseWriter)
+	}
+
+	return hij.Hijack()
 }
